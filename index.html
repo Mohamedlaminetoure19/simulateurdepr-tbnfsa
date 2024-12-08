@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation de Prêt de BNF-SA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #e8f5e9; /* Fond vert clair */
+            color: #2e7d32; /* Texte vert foncé */
+        }
+        h1, h2 {
+            text-align: center;
+            color: #1b5e20;
+        }
+        form {
+            background-color: #ffffff;
+            border: 1px solid #c8e6c9;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 600px;
+            margin: 20px auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input, select, button {
+            margin-top: 5px;
+            padding: 10px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #c8e6c9;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #2e7d32;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #1b5e20;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #ffffff;
+        }
+        th, td {
+            border: 1px solid #c8e6c9;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #a5d6a7;
+            font-weight: bold;
+        }
+        tfoot th {
+            background-color: #c8e6c9;
+        }
+        .summary {
+            background-color: #ffffff;
+            border: 1px solid #c8e6c9;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: left;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #1b5e20;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Simulation de Prêt de BNF-SA</h1>
+<form id="loanForm">
+    <label for="dateDemande">Date de demande :</label>
+    <input type="date" id="dateDemande" required>
+
+    <label for="montantPret">Montant du prêt (FCFA) :</label>
+    <input type="number" id="montantPret" min="1" required>
+
+    <label for="dureeCredit">Durée du crédit (en mois) :</label>
+    <input type="number" id="dureeCredit" min="1" required>
+
+    <label for="delaiGrace">Délai de grâce (en mois) :</label>
+    <input type="number" id="delaiGrace" min="0" value="0">
+
+    <label for="periodicite">Périodicité d’échéances :</label>
+    <select id="periodicite" required>
+        <option value="1">Mensuel</option>
+        <option value="2">Bimestriel</option>
+        <option value="3">Trimestriel</option>
+        <option value="6">Semestriel</option>
+        <option value="12">Annuel</option>
+    </select>
+
+    <button type="button" onclick="calculateAmortization()">Calculer</button>
+</form>
+
+<div class="summary">
+    <h2>Détails</h2>
+    <p><strong>Nombre d'échéances :</strong> <span id="nbEcheances"></span></p>
+    <p><strong>Taux annuel :</strong> 18%</p>
+    <p><strong>Taux périodique :</strong> <span id="tauxPeriodique"></span>%</p>
+</div>
+
+<h2>Tableau d'Amortissement</h2>
+<table id="amortizationTable">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Date Échéance</th>
+            <th>Intérêt (FCFA)</th>
+            <th>Capital (FCFA)</th>
+            <th>Total Échéance (FCFA)</th>
+            <th>Capital Restant (FCFA)</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+    <tfoot>
+        <tr>
+            <th colspan="2">Totaux</th>
+            <th id="totalInteret">0</th>
+            <th id="totalCapital">0</th>
+            <th id="totalEcheance">0</th>
+            <th>--</th>
+        </tr>
+    </tfoot>
+</table>
+
+<footer>
+    © 2024 Mohamed Lamine TOURE, RSIG | Contact : 00223 76 24 49 70 | <a href="mailto:mohamedlaminedtoure@gmail.com">mohamedlaminedtoure@gmail.com</a>
+</footer>
+
+<script>
+function calculateAmortization() {
+    // Récupérer les valeurs du formulaire
+    const montantPret = parseFloat(document.getElementById("montantPret").value);
+    const dureeCredit = parseInt(document.getElementById("dureeCredit").value);
+    const delaiGrace = parseInt(document.getElementById("delaiGrace").value);
+    const periodicite = parseInt(document.getElementById("periodicite").value);
+    const tauxAnnuel = 18 / 100;
+    const tauxPeriodique = (tauxAnnuel / (12 / periodicite)) * 100;
+
+    const tableau = document.getElementById("amortizationTable").querySelector("tbody");
+    tableau.innerHTML = ""; // Vider le tableau précédent
+
+    let capitalRestant = montantPret;
+    const periodiciteMois = periodicite;
+    const nombreEcheances = dureeCredit / periodiciteMois;
+    const mensualite = montantPret * (tauxAnnuel / (12 / periodicite)) / 
+                       (1 - Math.pow(1 + (tauxAnnuel / (12 / periodicite)), -nombreEcheances));
+
+    // Initialisation des totaux
+    let totalInteret = 0;
+    let totalCapital = 0;
+    let totalEcheance = 0;
+
+    // Calculer les échéances
+    for (let i = 1; i <= nombreEcheances; i++) {
+        const interet = capitalRestant * tauxAnnuel / (12 / periodicite);
+        const capital = mensualite - interet;
+        capitalRestant -= capital;
+
+        // Ajouter aux totaux
+        totalInteret += interet;
+        totalCapital += capital;
+        totalEcheance += mensualite;
+
+        const dateEcheance = new Date();
+        dateEcheance.setMonth(dateEcheance.getMonth() + periodiciteMois * i + delaiGrace);
+
+        const row = tableau.insertRow();
+        row.insertCell(0).textContent = i;
+        row.insertCell(1).textContent = dateEcheance.toLocaleDateString("fr-FR");
+        row.insertCell(2).textContent = interet.toFixed(2);
+        row.insertCell(3).textContent = capital.toFixed(2);
+        row.insertCell(4).textContent = mensualite.toFixed(2);
+        row.insertCell(5).textContent = Math.max(capitalRestant, 0).toFixed(2);
+    }
+
+    // Mettre à jour les totaux dans le tableau
+    document.getElementById("totalInteret").textContent = totalInteret.toFixed(2);
+    document.getElementById("totalCapital").textContent = totalCapital.toFixed(2);
+    document.getElementById("totalEcheance").textContent = totalEcheance.toFixed(2);
+
+    // Afficher les détails
+    document.getElementById("nbEcheances").textContent = nombreEcheances;
+    document.getElementById("tauxPeriodique").textContent = tauxPeriodique.toFixed(2);
+}
+</script>
+
+</body>
+</html>
